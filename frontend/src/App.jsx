@@ -1,3 +1,5 @@
+// frontend/src/App.jsx
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import AnalysisBoard from "./pages/AnalysisBoard";
@@ -5,32 +7,34 @@ import LearnTrap from "./pages/LearnTrap";
 import "./App.css";
 
 function App() {
-  // State diangkat ke komponen induk
   const [trapList, setTrapList] = useState([]);
-  const [allTraps, setAllTraps] = useState({});
+  const [isLoading, setIsLoading] = useState(true); // State untuk melacak proses loading
 
-  // Fungsi untuk mengambil data, sekarang bisa dipanggil dari mana saja
-  const fetchData = async () => {
+  // Fungsi untuk mengambil daftar nama trap dari API
+  const fetchTrapNames = async () => {
+    setIsLoading(true); // Mulai loading
     try {
+      // Menggunakan URL relatif yang akan bekerja di lokal dan saat deploy
+      // Menjadi baris ini:
       const namesResponse = await fetch(
-        "http://localhost:4000/api/get-trap-names"
+        `/api/get-trap-names?cachebust=${new Date().getTime()}`
       );
+      if (!namesResponse.ok) {
+        throw new Error(`HTTP error! status: ${namesResponse.status}`);
+      }
       const names = await namesResponse.json();
       setTrapList(names);
-
-      const allTrapsResponse = await fetch(
-        "http://localhost:4000/api/get-all-traps"
-      );
-      const allTrapsData = await allTrapsResponse.json();
-      setAllTraps(allTrapsData);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("Failed to fetch trap names:", error);
+      setTrapList([]); // Set ke array kosong jika ada error
+    } finally {
+      setIsLoading(false); // Selesai loading, baik sukses maupun gagal
     }
   };
 
-  // Ambil data saat aplikasi pertama kali dimuat
+  // Ambil data saat komponen pertama kali dimuat
   useEffect(() => {
-    fetchData();
+    fetchTrapNames();
   }, []);
 
   return (
@@ -43,11 +47,11 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={<AnalysisBoard onDatabaseUpdate={fetchData} />} // Teruskan fungsi update
+          element={<AnalysisBoard onDatabaseUpdate={fetchTrapNames} />}
         />
         <Route
           path="/learn"
-          element={<LearnTrap trapList={trapList} allTraps={allTraps} />} // Teruskan data sebagai props
+          element={<LearnTrap trapList={trapList} isLoading={isLoading} />} // Teruskan state loading ke LearnTrap
         />
       </Routes>
     </div>

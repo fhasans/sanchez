@@ -1,10 +1,12 @@
+// frontend/src/pages/LearnTrap.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import "../App.css";
 
-// Terima trapList dan allTraps sebagai props
-function LearnTrap({ trapList, allTraps }) {
+// Terima prop isLoading dan trapList
+function LearnTrap({ trapList, isLoading }) {
   const gameRef = useRef(new Chess());
   const game = gameRef.current;
 
@@ -13,18 +15,43 @@ function LearnTrap({ trapList, allTraps }) {
   const [boardOrientation, setBoardOrientation] = useState("white");
   const [gameHistory, setGameHistory] = useState([]);
   const [selectedTrap, setSelectedTrap] = useState("");
-
-  // HAPUS useEffect yang mengambil data dari sini
+  const [currentTrapData, setCurrentTrapData] = useState({});
 
   useEffect(() => {
     if (selectedTrap) {
-      const entriesForFen = allTraps[fen] || [];
-      const trapData = entriesForFen.find(
-        (trap) => trap.trapName === selectedTrap
-      );
-      setSuggestedMove(trapData ? trapData.move : null);
+      const entriesForFen = currentTrapData[fen] || [];
+      const trapMove = entriesForFen[0];
+      setSuggestedMove(trapMove ? trapMove.move : null);
+    } else {
+      setSuggestedMove(null);
     }
-  }, [fen, selectedTrap, allTraps]);
+  }, [fen, selectedTrap, currentTrapData]);
+
+  async function handleTrapSelection(event) {
+    const selectedName = event.target.value;
+    game.reset();
+    updateGameState();
+    setSelectedTrap(selectedName);
+    setCurrentTrapData({});
+
+    if (selectedName) {
+      const trapInfo = trapList.find((trap) => trap.name === selectedName);
+      if (trapInfo) setBoardOrientation(trapInfo.trapFor);
+
+      try {
+        // MENGGUNAKAN URL RELATIF
+        const response = await fetch(
+          `/api/get-trap-details?trapName=${encodeURIComponent(selectedName)}`
+        );
+        const data = await response.json();
+        setCurrentTrapData(data);
+      } catch (error) {
+        console.error("Failed to fetch trap details:", error);
+      }
+    } else {
+      setBoardOrientation("white");
+    }
+  }
 
   function updateGameState() {
     setFen(game.fen());
@@ -41,29 +68,6 @@ function LearnTrap({ trapList, allTraps }) {
     }
   }
 
-  function handleTrapSelection(event) {
-    const selectedName = event.target.value;
-    game.reset();
-    updateGameState();
-    setSelectedTrap(selectedName);
-
-    if (selectedName) {
-      const trapInfo = trapList.find((trap) => trap.name === selectedName);
-      if (trapInfo) setBoardOrientation(trapInfo.trapFor);
-
-      const startFen = new Chess().fen();
-      // Cari langkah pertama di database lokal yang diterima dari props
-      const entriesForStartFen = allTraps[startFen] || [];
-      const trapData = entriesForStartFen.find(
-        (trap) => trap.trapName === selectedName
-      );
-      setSuggestedMove(trapData ? trapData.move : null);
-    } else {
-      setBoardOrientation("white");
-      setSuggestedMove(null);
-    }
-  }
-
   return (
     <>
       <div className="game-controls" style={{ marginTop: "20px" }}>
@@ -72,14 +76,21 @@ function LearnTrap({ trapList, allTraps }) {
           style={{ width: "100%", justifyContent: "center" }}
         >
           <strong>Learn a Gambit:</strong>
-          <select value={selectedTrap} onChange={handleTrapSelection}>
-            <option value="">-- Select a Trap --</option>
-            {trapList.map((trap) => (
-              <option key={trap.name} value={trap.name}>
-                {trap.name} ({trap.source})
-              </option>
-            ))}
-          </select>
+
+          {/* Tampilkan pesan loading atau dropdown berdasarkan state isLoading */}
+          {isLoading ? (
+            <p style={{ margin: "0 10px" }}>Loading traps...</p>
+          ) : (
+            <select value={selectedTrap} onChange={handleTrapSelection}>
+              <option value="">-- Select a Trap --</option>
+              {trapList &&
+                trapList.map((trap) => (
+                  <option key={trap.name} value={trap.name}>
+                    {trap.name} ({trap.source})
+                  </option>
+                ))}
+            </select>
+          )}
         </div>
       </div>
       <div className="board-container">

@@ -1,3 +1,5 @@
+// frontend/src/pages/AnalysisBoard.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
@@ -29,9 +31,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
   useEffect(() => {
     const getMovesForPosition = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:4000/api/get-move?fen=${fen}`
-        );
+        const response = await fetch(`/api/get-move?fen=${fen}`);
         const data = await response.json();
         setFoundMoves(data || []);
         if (preferredLine && data.length > 0) {
@@ -45,6 +45,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
           setSuggestedMove(data.length > 0 ? data[0].move : null);
         }
       } catch (error) {
+        console.error("Failed to fetch moves:", error);
         setFoundMoves([]);
       }
     };
@@ -88,9 +89,14 @@ function AnalysisBoard({ onDatabaseUpdate }) {
 
   async function handleSubmitPgn(event) {
     event.preventDefault();
+    if (!trapName.trim() || !newPgn.trim()) {
+      setStatusMessage("Error: Name and PGN fields cannot be empty.");
+      setTimeout(() => setStatusMessage(""), 5000);
+      return;
+    }
     setStatusMessage("Saving...");
     try {
-      const response = await fetch("http://localhost:4000/api/add-pgn", {
+      const response = await fetch(`/api/add-pgn`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -105,7 +111,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
       setStatusMessage(result.message);
       setNewPgn("");
       setTrapName("");
-      onDatabaseUpdate(); // Panggil update agar Learn a Gambit juga tahu
+      onDatabaseUpdate();
     } catch (error) {
       setStatusMessage(`Error: ${error.message}`);
     } finally {
@@ -114,14 +120,24 @@ function AnalysisBoard({ onDatabaseUpdate }) {
   }
 
   async function handleResetDatabase() {
-    if (window.confirm("Are you sure?")) {
-      await fetch("http://localhost:4000/api/reset-database", {
-        method: "POST",
-      });
-      setStatusMessage("All databases have been reset.");
-      resetBoard();
-      onDatabaseUpdate();
-      setTimeout(() => setStatusMessage(""), 5000);
+    if (
+      window.confirm(
+        "Are you sure you want to delete ALL data? This cannot be undone."
+      )
+    ) {
+      setStatusMessage("Resetting database...");
+      try {
+        await fetch(`/api/reset-database`, {
+          method: "POST",
+        });
+        setStatusMessage("All databases have been reset.");
+        resetBoard();
+        onDatabaseUpdate();
+      } catch (error) {
+        setStatusMessage(`Error: ${error.message}`);
+      } finally {
+        setTimeout(() => setStatusMessage(""), 5000);
+      }
     }
   }
 
@@ -147,7 +163,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
                     moveData.trapName === preferredLine.trapName;
                   return (
                     <li
-                      key={index}
+                      key={`${moveData.trapName}-${index}`}
                       className={isPreferred ? "preferred" : ""}
                       onClick={() => handleLineSelection(moveData)}
                     >
@@ -192,6 +208,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
             value={trapName}
             onChange={(e) => setTrapName(e.target.value)}
             placeholder="Enter Name (e.g., Vienna Gambit)..."
+            required
           />
           <div className="trap-for-container">
             <label>
@@ -218,6 +235,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
             onChange={(e) => setNewPgn(e.target.value)}
             placeholder="Paste one or more PGNs here, separated by a blank line..."
             rows="10"
+            required
           />
           <div className="save-to-container">
             <strong>Save to:</strong>
