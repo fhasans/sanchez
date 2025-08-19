@@ -1,5 +1,3 @@
-// frontend/src/pages/AnalysisBoard.jsx
-
 import React, { useState, useEffect, useRef } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
@@ -27,6 +25,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
   const [trapFor, setTrapFor] = useState("white");
   const [saveToSource, setSaveToSource] = useState("traps");
   const [statusMessage, setStatusMessage] = useState("");
+  const [resetClickCount, setResetClickCount] = useState(0);
 
   useEffect(() => {
     const getMovesForPosition = async () => {
@@ -141,6 +140,10 @@ function AnalysisBoard({ onDatabaseUpdate }) {
     }
   }
 
+  const handleSaveClick = () => {
+    setResetClickCount(resetClickCount + 1);
+  };
+
   return (
     <>
       <div className="board-container" style={{ marginTop: "20px" }}>
@@ -248,12 +251,16 @@ function AnalysisBoard({ onDatabaseUpdate }) {
               <option value="myGames">My Games</option>
             </select>
           </div>
-          <button type="submit">Save to Database</button>
+          <button type="submit" onClick={handleSaveClick}>
+            Save to Database
+          </button>
         </form>
         {statusMessage && <p className="status-message">{statusMessage}</p>}
-        <button onClick={handleResetDatabase} className="reset-db-button">
-          Reset Database
-        </button>
+        {resetClickCount >= 5 && (
+          <button onClick={handleResetDatabase} className="reset-db-button">
+            Reset Database
+          </button>
+        )}
       </div>
     </>
   );
