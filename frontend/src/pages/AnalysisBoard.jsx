@@ -82,14 +82,6 @@ function AnalysisBoard({ onDatabaseUpdate }) {
     }
   }
 
-  function onChangeTrapname(e) {
-    const val = e?.target?.value;
-    setTrapName(val);
-    if (val === "**********") {
-      setShowResetButton(true);
-    }
-  }
-
   function handleLineSelection(moveData) {
     setPreferredLine({ source: moveData.source, trapName: moveData.trapName });
     game.move(moveData.move);
@@ -215,7 +207,14 @@ function AnalysisBoard({ onDatabaseUpdate }) {
           <input
             type="text"
             value={trapName}
-            onChange={(e) => onChangeTrapname(e)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setTrapName(value);
+              // Cek apakah nilai yang diketik adalah kata kunci rahasia
+              if (value === "**********") {
+                setShowResetButton(true);
+              }
+            }}
             placeholder="Enter Name (e.g., Vienna Gambit)..."
             required
           />
