@@ -1,0 +1,10 @@
+# .gitignore
+
+# Dependencies
+/node_modules
+/frontend/node_modules
+
+# Environment Variables
+.env
+.env.*
+.vercel
