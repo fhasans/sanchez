@@ -27,6 +27,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
   const [trapFor, setTrapFor] = useState("white");
   const [saveToSource, setSaveToSource] = useState("traps");
   const [statusMessage, setStatusMessage] = useState("");
+  const [showResetButton, setShowResetButton] = useState(false);
 
   useEffect(() => {
     const getMovesForPosition = async () => {
@@ -78,6 +79,14 @@ function AnalysisBoard({ onDatabaseUpdate }) {
     if (suggestedMove) {
       game.move(suggestedMove);
       updateGameState();
+    }
+  }
+
+  function onChangeTrapname(e) {
+    const val = e?.target?.value;
+    setTrapName(val);
+    if (val === "**********") {
+      setShowResetButton(true);
     }
   }
 
@@ -206,7 +215,7 @@ function AnalysisBoard({ onDatabaseUpdate }) {
           <input
             type="text"
             value={trapName}
-            onChange={(e) => setTrapName(e.target.value)}
+            onChange={(e) => onChangeTrapname(e)}
             placeholder="Enter Name (e.g., Vienna Gambit)..."
             required
           />
@@ -251,9 +260,11 @@ function AnalysisBoard({ onDatabaseUpdate }) {
           <button type="submit">Save to Database</button>
         </form>
         {statusMessage && <p className="status-message">{statusMessage}</p>}
-        <button onClick={handleResetDatabase} className="reset-db-button">
-          Reset Database
-        </button>
+        {showResetButton && (
+          <button onClick={handleResetDatabase} className="reset-db-button">
+            Reset Database
+          </button>
+        )}
       </div>
     </>
   );
