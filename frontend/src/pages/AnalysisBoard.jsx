@@ -1,3 +1,5 @@
+// frontend/src/pages/AnalysisBoard.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
@@ -25,17 +27,6 @@ function AnalysisBoard({ onDatabaseUpdate }) {
   const [trapFor, setTrapFor] = useState("white");
   const [saveToSource, setSaveToSource] = useState("traps");
   const [statusMessage, setStatusMessage] = useState("");
-
-  // 1. Initialize state from localStorage to persist the count
-  const [saveSuccessCount, setSaveSuccessCount] = useState(() => {
-    const savedCount = localStorage.getItem("saveSuccessCount");
-    return savedCount ? parseInt(savedCount, 10) : 0;
-  });
-
-  // 2. Update localStorage whenever the count changes
-  useEffect(() => {
-    localStorage.setItem("saveSuccessCount", saveSuccessCount);
-  }, [saveSuccessCount]);
 
   useEffect(() => {
     const getMovesForPosition = async () => {
@@ -121,9 +112,6 @@ function AnalysisBoard({ onDatabaseUpdate }) {
       setNewPgn("");
       setTrapName("");
       onDatabaseUpdate();
-
-      // 3. Increment the counter ONLY on a successful save
-      setSaveSuccessCount((prevCount) => prevCount + 1);
     } catch (error) {
       setStatusMessage(`Error: ${error.message}`);
     } finally {
@@ -145,8 +133,6 @@ function AnalysisBoard({ onDatabaseUpdate }) {
         setStatusMessage("All databases have been reset.");
         resetBoard();
         onDatabaseUpdate();
-        // Optionally reset the counter after a successful database reset
-        setSaveSuccessCount(0);
       } catch (error) {
         setStatusMessage(`Error: ${error.message}`);
       } finally {
@@ -165,7 +151,6 @@ function AnalysisBoard({ onDatabaseUpdate }) {
         />
       </div>
       <div className="info-container">
-        {/* ... moves explorer and button controls ... */}
         <div className="moves-explorer">
           {foundMoves.length > 0 ? (
             <>
@@ -263,17 +248,12 @@ function AnalysisBoard({ onDatabaseUpdate }) {
               <option value="myGames">My Games</option>
             </select>
           </div>
-          {/* 4. Removed the incorrect onClick handler from this button */}
           <button type="submit">Save to Database</button>
         </form>
         {statusMessage && <p className="status-message">{statusMessage}</p>}
-
-        {/* 5. Conditionally render the button based on the success count */}
-        {saveSuccessCount >= 5 && (
-          <button onClick={handleResetDatabase} className="reset-db-button">
-            Reset Database
-          </button>
-        )}
+        <button onClick={handleResetDatabase} className="reset-db-button">
+          Reset Database
+        </button>
       </div>
     </>
   );
